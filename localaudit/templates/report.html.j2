@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LocalAudit Report</title>
+<style>
+:root {
+  --bg: #f6f7f9; --card: #ffffff; --text: #1d2330; --muted: #5d6677; --border: #dfe3ea;
+  --code-bg: #f3f5f8; --hit: #fff4d6;
+  --critical: #a4161a; --high: #d9480f; --medium: #b07d00; --low: #2f6fb2; --info: #6b7280;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14171c; --card: #1c2027; --text: #e6e9ef; --muted: #9aa3b2; --border: #2e3440;
+    --code-bg: #12151a; --hit: #3a3215;
+    --critical: #ff6b6b; --high: #ff922b; --medium: #f2c94c; --low: #74b0f0; --info: #a0a7b4;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font: 15px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+main { max-width: 1040px; margin: 0 auto; padding: 32px 16px 64px; }
+h1 { font-size: 26px; margin: 0 0 4px; }
+h2 { font-size: 19px; margin: 36px 0 12px; display: flex; align-items: center; gap: 10px; }
+h3 { font-size: 16px; margin: 0; }
+.muted { color: var(--muted); }
+.meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 6px 24px;
+  margin: 16px 0 0; padding: 0; }
+.meta div { min-width: 0; }
+.meta dt { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.meta dd { margin: 0; overflow-wrap: anywhere; }
+.summary { display: grid; grid-template-columns: 220px 1fr; gap: 16px; margin-top: 24px; }
+@media (max-width: 640px) { .summary { grid-template-columns: 1fr; } }
+.panel { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+.score { font-size: 44px; font-weight: 700; line-height: 1; }
+.score small { font-size: 16px; color: var(--muted); font-weight: 400; }
+.bar { height: 8px; border-radius: 4px; background: var(--border); margin: 12px 0 6px; overflow: hidden; }
+.bar span { display: block; height: 100%; background: var(--sev); }
+.counts { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 10px; }
+.count { border-left: 4px solid var(--sev); padding: 4px 10px; }
+.count b { display: block; font-size: 24px; }
+.count span { font-size: 13px; color: var(--muted); text-transform: capitalize; }
+.notice { margin-top: 16px; padding: 10px 14px; border-radius: 8px; border: 1px dashed var(--border); color: var(--muted); font-size: 14px; }
+.sev-critical { --sev: var(--critical); } .sev-high { --sev: var(--high); } .sev-medium { --sev: var(--medium); }
+.sev-low { --sev: var(--low); } .sev-info { --sev: var(--info); }
+.badge { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  color: #fff; background: var(--sev); padding: 2px 8px; border-radius: 999px; }
+@media (prefers-color-scheme: dark) { .badge { color: #111; } }
+.finding { background: var(--card); border: 1px solid var(--border); border-left: 4px solid var(--sev);
+  border-radius: 10px; padding: 16px 18px; margin-bottom: 14px; }
+.finding-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 12px; }
+.loc { font-family: ui-monospace, Consolas, "SF Mono", Menlo, monospace; font-size: 13px; overflow-wrap: anywhere; }
+.tags { font-size: 12px; color: var(--muted); margin: 4px 0 10px; }
+pre { margin: 10px 0; background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px;
+  padding: 8px 0; overflow-x: auto; font: 12.5px/1.5 ui-monospace, Consolas, "SF Mono", Menlo, monospace; }
+pre .ln { display: block; padding: 0 12px; white-space: pre; }
+pre .ln.hit { background: var(--hit); }
+pre .num { display: inline-block; width: 3.5em; color: var(--muted); user-select: none; }
+pre.fix { padding: 8px 12px; white-space: pre; }
+.triage { border-top: 1px solid var(--border); margin-top: 12px; padding-top: 10px; }
+.triage p { margin: 6px 0; }
+.label { font-weight: 600; }
+.unavailable { font-style: italic; color: var(--muted); }
+details.fp { margin-top: 36px; }
+details.fp > summary { cursor: pointer; font-size: 19px; font-weight: 700; }
+footer { margin-top: 48px; font-size: 13px; color: var(--muted); }
+@media print {
+  :root { --bg: #fff; --card: #fff; --text: #000; --muted: #444; --border: #bbb; --code-bg: #f6f6f6; --hit: #fff1c2;
+    --critical: #a4161a; --high: #c2410c; --medium: #8a6400; --low: #1f5a99; --info: #555; }
+  .badge { color: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  main { max-width: none; padding: 0; }
+  body { font-size: 11pt; }
+  .finding, .panel { break-inside: avoid; box-shadow: none; }
+  h2 { break-after: avoid; }
+  pre { white-space: pre-wrap; overflow: visible; }
+  pre .ln { white-space: pre-wrap; }
+  .bar span, .count, .finding, pre .ln.hit { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+</head>
+<body>
+<main>
+{% set m = data.meta %}{% set s = data.summary %}
+<header>
+  <h1>LocalAudit security report</h1>
+  <div class="muted">Generated locally. Source code was not sent to any remote service.</div>
+  <dl class="meta">
+    <div><dt>Target</dt><dd class="loc">{{ m.path }}</dd></div>
+    <div><dt>Date</dt><dd>{{ m.date }}</dd></div>
+    <div><dt>Model</dt><dd>{{ m.model or "none (rules only)" }}</dd></div>
+    <div><dt>LLM triage</dt><dd>{{ m.llm_status }}</dd></div>
+    <div><dt>Duration</dt><dd>{{ "%.1f"|format(m.duration_s) }} s</dd></div>
+    <div><dt>Files scanned</dt><dd>{{ m.files_scanned }} <span class="muted">({{ m.files_skipped }} skipped)</span></dd></div>
+  </dl>
+</header>
+
+{% set top = "critical" if s.counts.critical else "high" if s.counts.high else "medium" if s.counts.medium else "low" if s.counts.low else "info" %}
+<section class="summary">
+  <div class="panel sev-{{ top }}">
+    <div class="muted">Risk score</div>
+    <div class="score">{{ s.risk_score }}<small> / 100</small></div>
+    <div class="bar"><span style="width: {{ s.risk_score }}%"></span></div>
+    <div><b>{{ s.risk_label }}</b> <span class="muted">risk</span></div>
+  </div>
+  <div class="panel">
+    <div class="muted" style="margin-bottom:8px">{{ s.total }} finding{{ "" if s.total == 1 else "s" }}
+      {%- if s.likely_false_positives %}, plus {{ s.likely_false_positives }} likely false positive{{ "" if s.likely_false_positives == 1 else "s" }}{% endif %}</div>
+    <div class="counts">
+      {% for sev in severities %}
+      <div class="count sev-{{ sev }}"><b>{{ s.counts[sev] }}</b><span>{{ sev }}</span></div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% for n in m.notices %}<div class="notice">{{ n }}</div>{% endfor %}
+
+{% macro finding_card(f) %}
+<article class="finding sev-{{ f.severity }}" id="{{ f.id }}">
+  <div class="finding-head">
+    <span class="badge">{{ f.severity }}</span>
+    <h3>{{ f.title }}</h3>
+    <span class="loc">{{ f.file }}:{{ f.line }}</span>
+  </div>
+  <div class="tags">{{ f.rule_id }}{% if f.cwe %} &middot; {{ f.cwe }}{% endif %} &middot; {{ f.category }} &middot; {{ f.id }}</div>
+  <div>{{ f.description }}</div>
+  <pre>{% for row in snippet_rows(f) %}<span class="ln{{ ' hit' if row.hit }}"><span class="num">{{ row.num }}</span>{{ row.text }}</span>{% endfor %}</pre>
+  {% set t = f.triage %}
+  {% if t.available %}
+  <div class="triage">
+    <p><span class="label">Explanation:</span> {{ t.explanation }}</p>
+    <p><span class="label">Risk in context:</span> {{ t.risk_in_context }}</p>
+    <p><span class="label">LLM confidence:</span> {{ t.confidence }}{% if t.likely_false_positive %} &middot; judged likely false positive{% endif %}</p>
+    <p><span class="label">Suggested fix:</span> {{ t.suggested_fix }}</p>
+    {% if t.fixed_code_example %}<div class="label">Fix example</div><pre class="fix">{{ t.fixed_code_example }}</pre>{% endif %}
+  </div>
+  {% elif t.note %}
+  <div class="triage unavailable">{{ t.note }}</div>
+  {% endif %}
+</article>
+{% endmacro %}
+
+{% if not data.findings %}
+<h2>Findings</h2>
+<div class="panel">No findings{% if s.likely_false_positives %} other than likely false positives{% endif %}.</div>
+{% endif %}
+{% for sev in severities %}{% if grouped[sev] %}
+<h2 class="sev-{{ sev }}"><span class="badge">{{ sev }}</span> {{ grouped[sev]|length }} finding{{ "" if grouped[sev]|length == 1 else "s" }}</h2>
+{% for f in grouped[sev] %}{{ finding_card(f) }}{% endfor %}
+{% endif %}{% endfor %}
+
+{% if data.false_positives %}
+<details class="fp">
+  <summary>Likely false positives ({{ data.false_positives|length }})</summary>
+  <p class="muted">The local LLM judged these likely false positives given the surrounding code. They are kept here for
+    human review and still count toward <code>--fail-on</code>.</p>
+  {% for f in data.false_positives %}{{ finding_card(f) }}{% endfor %}
+</details>
+{% endif %}
+
+<footer>LocalAudit {{ data.version }} &middot; Findings are produced by deterministic rules; LLM text is advisory and may be wrong.</footer>
+</main>
+<script>
+// Expand collapsed sections when printing / saving as PDF.
+window.addEventListener("beforeprint", function () {
+  document.querySelectorAll("details").forEach(function (d) { d.setAttribute("open", ""); });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+Django==4.2.0
+requests
+PyYAML>=5.1
+gunicorn==21.2.0

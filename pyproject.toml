@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "localaudit"
+version = "0.1.0"
+description = "Local-only security audit for source repositories: deterministic rules plus local LLM triage via Ollama."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["requests>=2.28", "jinja2>=3.1"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[project.scripts]
+localaudit = "localaudit.cli:main"
+
+[tool.setuptools]
+packages = ["localaudit"]
+
+[tool.setuptools.package-data]
+localaudit = ["templates/*.j2"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

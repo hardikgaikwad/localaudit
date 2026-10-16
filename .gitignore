@@ -1,0 +1,6 @@
+__pycache__/
+*.egg-info/
+.localaudit_cache/
+localaudit-report/
+.pytest_cache/
+demo-report/
