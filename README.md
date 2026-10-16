@@ -25,6 +25,8 @@ localaudit scan examples/vulnerable_app
 
 You can try it without Ollama: `localaudit scan examples/vulnerable_app --no-llm`.
 
+> **Heads-up: the demo app contains fake API keys.** `examples/vulnerable_app/` and the tests include made-up credentials in real formats (AWS, Stripe, Slack, GitHub, Google, a JWT, a private key block) so the secret rules have something to find. None of them are real or valid. See [Demo app](#demo-app).
+
 > If `localaudit` is "not found" after installing, pip put the script in a user Scripts directory that isn't on your `PATH`. Run `python -m localaudit scan ...` instead, or add that directory to `PATH`.
 
 ## CLI
@@ -133,4 +135,19 @@ The tests use a mocked HTTP session for the LLM, so they don't need Ollama.
 
 ## Demo app
 
-`examples/vulnerable_app/` is **intentionally insecure**, and all of its credentials are fake. It exists only to show the rules firing. Don't deploy or copy it.
+`examples/vulnerable_app/` is **intentionally insecure**. It exists only to show the rules firing. Don't deploy or copy it.
+
+**It contains fake API keys and credentials.** To exercise the secret detector, the demo app and the tests (`tests/test_secrets.py`, `tests/test_scanner.py`) hold made-up values in the exact formats of real ones:
+
+| Kind | Where |
+|---|---|
+| AWS access key ID and secret access key | `shop/settings.py` |
+| Database password, Django `SECRET_KEY` | `shop/settings.py` |
+| GitHub token, Slack bot token, Stripe live key, Google API key, JWT, signing salt | `shop/integrations.py` |
+| RSA private key block | `shop/integrations.py` |
+
+These values are **not real, have never been valid, and grant access to nothing**. They were invented for this project. Some contain `FAKE` or `NOTAREALKEY`, but not all of them do, because real formats don't always leave room for it.
+
+Because they match real formats, other secret scanners will flag them too. GitHub's push protection blocks the first push until you allow each one as "used in tests". Repository secret-scanning alerts can be closed as "used in tests". If you fork this project, expect the same.
+
+Never replace them with real credentials, even for testing.
